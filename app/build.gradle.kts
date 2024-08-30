@@ -49,4 +49,8 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.mlkit.vision)
     implementation(libs.androidx.camera.extensions)
+    //Additional MLKit Libs
+    implementation(libs.mlkit.textRecognition)
+    implementation(libs.mlkit.textRecognitionKorean)
+    implementation(libs.mlkit.visioncommon)
 }

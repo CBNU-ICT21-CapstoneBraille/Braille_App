@@ -16,6 +16,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        //Add Google Maven
+        maven { url = uri("https://maven.google.com") }
     }
 }
 

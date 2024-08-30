@@ -9,6 +9,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import androidx.core.content.ContextCompat;
+import com.google.common.util.concurrent.ListenableFuture;
+import java.io.File;
+import java.util.concurrent.ExecutionException;
+
+//CameraX
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -16,15 +23,20 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
-import androidx.core.content.ContextCompat;
-import com.google.common.util.concurrent.ListenableFuture;
-import java.io.File;
-import java.util.concurrent.ExecutionException;
+//MLKit
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.Text;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import androidx.camera.core.ExperimentalGetImage;
 
 public class MainActivity extends AppCompatActivity {
     private PreviewView previewView;
     private ImageCapture imageCapture;
     private Camera camera;
+    private ImageAnalysis imageAnalysis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +88,22 @@ public class MainActivity extends AppCompatActivity {
                         .requireLensFacing(CameraSelector.LENS_FACING_BACK)
                         .build();
 
+                //ImageAnalysis Settings for OCR
+                imageAnalysis = new ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
+
+                //OCR works
+                imageAnalysis.setAnalyzer(ContextCompat.getMainExecutor(this), new ImageAnalysis.Analyzer() {
+                    @ExperimentalGetImage
+                    @Override
+                    public void analyze(@NonNull ImageProxy imageProxy) {
+                        processImageProxy(imageProxy);  // 이미지 분석 및 OCR 처리
+                    }
+                });
+
                 cameraProvider.unbindAll();
-                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
+                camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, imageAnalysis);
 
             } catch (ExecutionException | InterruptedException e) {
                 e.printStackTrace();
@@ -121,4 +147,34 @@ public class MainActivity extends AppCompatActivity {
         }
         return outputDir;
     }
+
+    //Methods for image analysis & OCR
+    @ExperimentalGetImage
+    private void processImageProxy(ImageProxy imageProxy) {
+        //Create InputImage from ImageProxy
+        InputImage inputImage = InputImage.fromMediaImage(imageProxy.getImage(), imageProxy.getImageInfo().getRotationDegrees());
+
+        //Text recognizer based on Latin
+        com.google.mlkit.vision.text.TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+
+        //Text recognition from image
+        recognizer.process(inputImage)
+                .addOnSuccessListener(visionText -> {
+                    //If text recognition success
+                    for (Text.TextBlock block : visionText.getTextBlocks()) {
+                        String recognizedText = block.getText();
+                        //UI
+                        Toast.makeText(MainActivity.this, recognizedText, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    //If text recognition fail
+                    Toast.makeText(MainActivity.this, "텍스트 인식 실패", Toast.LENGTH_SHORT).show();
+                })
+                .addOnCompleteListener(task -> {
+                    //If image analysis complete, clear resources
+                    imageProxy.close();
+                });
+    }
+
 }
