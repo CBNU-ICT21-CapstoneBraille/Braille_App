@@ -42,14 +42,15 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 
     //CameraX Libs
+    //implementation(libs.androidx.camera.mlkit.vision)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
-    implementation(libs.androidx.camera.mlkit.vision)
     implementation(libs.androidx.camera.extensions)
-    //Additional MLKit Libs
+
+    //MLKit Libs
     implementation(libs.mlkit.textRecognition)
     implementation(libs.mlkit.textRecognitionKorean)
     implementation(libs.mlkit.visioncommon)

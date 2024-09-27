@@ -10,8 +10,10 @@ constraintlayout = "2.1.4"
 
 #CameraX
 cameraLifecycle = "1.4.0-rc01"
+
 #MLKit
 mlkitTextRecognition = "16.0.1"
+mlkitTextRecognitionKorean = "16.0.1"
 mlkitVisioncommon = "16.0.1"
 
 
@@ -29,15 +31,19 @@ camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = 
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraLifecycle" }
 androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "cameraLifecycle" }
 androidx-camera-extensions = { module = "androidx.camera:camera-extensions", version.ref = "cameraLifecycle" }
-androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "cameraLifecycle" }
 androidx-camera-video = { module = "androidx.camera:camera-video", version.ref = "cameraLifecycle" }
 androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraLifecycle" }
-#MLKit
+#androidx-camera-mlkit-vision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "cameraLifecycle" }
+
 mlkit-textRecognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
-mlkit-textRecognitionKorean = { group = "com.google.mlkit", name = "text-recognition-korean", version.ref = "mlkitTextRecognition" }
+mlkit-textRecognitionKorean = { group = "com.google.mlkit", name = "text-recognition-korean", version.ref = "mlkitTextRecognitionKorean" }
 mlkit-visioncommon = { group = "com.google.mlkit", name = "vision-common", version.ref = "mlkitVisioncommon" }
 
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+
+
+
+
 
