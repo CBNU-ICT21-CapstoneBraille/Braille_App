@@ -54,4 +54,7 @@ dependencies {
     implementation(libs.mlkit.textRecognition)
     implementation(libs.mlkit.textRecognitionKorean)
     implementation(libs.mlkit.visioncommon)
+
+    //BLE Lib
+    implementation(libs.androidx.bluetooth)
 }

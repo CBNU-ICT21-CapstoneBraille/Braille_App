@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
+import android.graphics.Rect;
 
 //CameraX
 import androidx.camera.core.Camera;
@@ -148,33 +149,73 @@ public class MainActivity extends AppCompatActivity {
         return outputDir;
     }
 
-    //Methods for image analysis & OCR
+    //Rect
+    private int convertDpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
+
+    //OCR Timing
+    private boolean isCameraPaused = false;
+    private static final long CAMERA_PAUSE_DURATION = 5000;
+
+    //Methods for OCR
     @ExperimentalGetImage
     private void processImageProxy(ImageProxy imageProxy) {
-        //Create InputImage from ImageProxy
+        if (isCameraPaused) {
+            imageProxy.close();
+            return;
+        }
+
         InputImage inputImage = InputImage.fromMediaImage(imageProxy.getImage(), imageProxy.getImageInfo().getRotationDegrees());
 
-        //Text recognizer based on Latin
+        // Text recognize
         com.google.mlkit.vision.text.TextRecognizer recognizer = TextRecognition.getClient(new KoreanTextRecognizerOptions.Builder().build());
 
-        //Text recognition from image
         recognizer.process(inputImage)
                 .addOnSuccessListener(visionText -> {
-                    //If text recognition success
+                    int imageWidth = imageProxy.getWidth();
+                    int imageHeight = imageProxy.getHeight();
+
+                    int rectLeft = (imageWidth - convertDpToPx(350)) / 2;
+                    int rectTop = (int) (imageHeight * 0.3);
+                    int rectRight = rectLeft + convertDpToPx(350);
+                    int rectBottom = rectTop + convertDpToPx(100);
+
+                    Rect overlayRect = new Rect(rectLeft, rectTop, rectRight, rectBottom);
+
                     for (Text.TextBlock block : visionText.getTextBlocks()) {
-                        String recognizedText = block.getText();
-                        //UI
-                        Toast.makeText(MainActivity.this, recognizedText, Toast.LENGTH_SHORT).show();
+                        Rect boundingBox = block.getBoundingBox();
+                        if (boundingBox != null) {
+                            Rect adjustedBoundingBox = new Rect(
+                                    boundingBox.left,
+                                    imageHeight - boundingBox.bottom,
+                                    boundingBox.right,
+                                    imageHeight - boundingBox.top
+                            );
+
+                            if (Rect.intersects(adjustedBoundingBox, overlayRect)) {
+                                String recognizedText = block.getText();
+                                Toast.makeText(MainActivity.this, recognizedText, Toast.LENGTH_SHORT).show();
+                                pauseCamera();
+                                break;
+                            }
+                        }
                     }
                 })
                 .addOnFailureListener(e -> {
-                    //If text recognition fail
                     Toast.makeText(MainActivity.this, "텍스트 인식 실패", Toast.LENGTH_SHORT).show();
                 })
                 .addOnCompleteListener(task -> {
-                    //If image analysis complete, clear resources
                     imageProxy.close();
                 });
+    }
+
+    private void pauseCamera() {
+        isCameraPaused = true;
+        new android.os.Handler().postDelayed(() -> {
+            isCameraPaused = false;
+        }, CAMERA_PAUSE_DURATION);
     }
 
 }
