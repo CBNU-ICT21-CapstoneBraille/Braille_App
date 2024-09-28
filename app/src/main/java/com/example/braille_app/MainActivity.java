@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
 
     //OCR Timing
     private boolean isCameraPaused = false;
-    private static final long CAMERA_PAUSE_DURATION = 5000;
+    private static final long CAMERA_PAUSE_DURATION = 10000;
 
     //Methods for OCR
     @ExperimentalGetImage
