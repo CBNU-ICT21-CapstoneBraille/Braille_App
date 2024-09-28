@@ -14,6 +14,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
 import android.graphics.Rect;
+import android.graphics.RectF;
 
 //CameraX
 import androidx.camera.core.Camera;
@@ -23,6 +24,7 @@ import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import android.view.View;
 
 //MLKit
 import androidx.camera.core.ImageAnalysis;
@@ -38,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageCapture imageCapture;
     private Camera camera;
     private ImageAnalysis imageAnalysis;
+    private View rectOverlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         previewView = findViewById(R.id.previewView);
+        rectOverlay = findViewById(R.id.rectOverlay);
         requestCameraPermission();
 
         Button photoButton = findViewById(R.id.Photo);
@@ -157,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
 
     //OCR Timing
     private boolean isCameraPaused = false;
-    private static final long CAMERA_PAUSE_DURATION = 10000;
+    private static final long CAMERA_PAUSE_DURATION = 5000;
 
     //Methods for OCR
     @ExperimentalGetImage
@@ -167,40 +171,61 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        InputImage inputImage = InputImage.fromMediaImage(imageProxy.getImage(), imageProxy.getImageInfo().getRotationDegrees());
+        int imageWidth = imageProxy.getWidth();
+        int imageHeight = imageProxy.getHeight();
+        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
 
-        // Text recognize
+        int previewWidth = previewView.getWidth();
+        int previewHeight = previewView.getHeight();
+
+        int[] overlayLocation = new int[2];
+        rectOverlay.getLocationInWindow(overlayLocation);
+        int overlayLeft = overlayLocation[0] - previewView.getLeft();
+        int overlayTop = overlayLocation[1] - previewView.getTop();
+        int overlayRight = overlayLeft + rectOverlay.getWidth();
+        int overlayBottom = overlayTop + rectOverlay.getHeight();
+        
+        float scaleX = (float) imageWidth / previewWidth;
+        float scaleY = (float) imageHeight / previewHeight;
+
+        int offset = convertDpToPx(50);
+
+        RectF overlayRect = new RectF(
+                overlayLeft * scaleX,
+                (overlayTop + offset) * scaleY, // 상단을 50dp 만큼 줄임
+                overlayRight * scaleX,
+                overlayBottom * scaleY
+        );
+
+        InputImage inputImage = InputImage.fromMediaImage(imageProxy.getImage(), rotationDegrees);
         com.google.mlkit.vision.text.TextRecognizer recognizer = TextRecognition.getClient(new KoreanTextRecognizerOptions.Builder().build());
 
         recognizer.process(inputImage)
                 .addOnSuccessListener(visionText -> {
-                    int imageWidth = imageProxy.getWidth();
-                    int imageHeight = imageProxy.getHeight();
-
-                    int rectLeft = (imageWidth - convertDpToPx(350)) / 2;
-                    int rectTop = (int) (imageHeight * 0.3);
-                    int rectRight = rectLeft + convertDpToPx(350);
-                    int rectBottom = rectTop + convertDpToPx(100);
-
-                    Rect overlayRect = new Rect(rectLeft, rectTop, rectRight, rectBottom);
+                    boolean textDetectedInOverlay = false;
 
                     for (Text.TextBlock block : visionText.getTextBlocks()) {
                         Rect boundingBox = block.getBoundingBox();
                         if (boundingBox != null) {
-                            Rect adjustedBoundingBox = new Rect(
+                            // boundingBox 좌표를 RectF로 변환
+                            RectF adjustedBoundingBox = new RectF(
                                     boundingBox.left,
-                                    imageHeight - boundingBox.bottom,
+                                    boundingBox.top,
                                     boundingBox.right,
-                                    imageHeight - boundingBox.top
+                                    boundingBox.bottom
                             );
 
-                            if (Rect.intersects(adjustedBoundingBox, overlayRect)) {
+                            if (RectF.intersects(adjustedBoundingBox, overlayRect)) {
+                                textDetectedInOverlay = true;
                                 String recognizedText = block.getText();
                                 Toast.makeText(MainActivity.this, recognizedText, Toast.LENGTH_SHORT).show();
-                                pauseCamera();
                                 break;
                             }
                         }
+                    }
+
+                    if (textDetectedInOverlay) {
+                        pauseCamera();
                     }
                 })
                 .addOnFailureListener(e -> {
@@ -211,11 +236,11 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+
     private void pauseCamera() {
         isCameraPaused = true;
         new android.os.Handler().postDelayed(() -> {
             isCameraPaused = false;
         }, CAMERA_PAUSE_DURATION);
     }
-
 }

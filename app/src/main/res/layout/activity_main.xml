@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -14,19 +15,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"></androidx.camera.view.PreviewView>
+        app:layout_constraintTop_toTopOf="parent">
+    </androidx.camera.view.PreviewView>
 
     <View
         android:id="@+id/rectOverlay"
         android:layout_width="350dp"
-        android:layout_height="100dp"
+        android:layout_height="200dp"
         android:background="@drawable/rectangle_border"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/previewView"
+        app:layout_constraintStart_toStartOf="@id/previewView"
+        app:layout_constraintEnd_toEndOf="@id/previewView"
+        app:layout_constraintTop_toTopOf="@id/previewView"
+        app:layout_constraintBottom_toBottomOf="@id/previewView"
         app:layout_constraintVertical_bias="0.4"
-        android:layout_marginBottom="50dp" />
+        app:layout_constraintHorizontal_bias="0.5" />
 
     <LinearLayout
         android:layout_width="wrap_content"
